@@ -1,6 +1,6 @@
 import os
 import sys
-sys.path.append("/home/local/ASURITE/longchao/Desktop/project/GE_health/SegmentAsYouWish")
+# sys.path.append("/home/local/ASURITE/longchao/Desktop/project/GE_health/SegmentAsYouWish")
 import glob
 import random
 import monai
