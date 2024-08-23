@@ -34,7 +34,7 @@ parser.add_argument(
     '-i',
     '--tr_npy_path',
     type=str,
-    default= "/home/local/ASURITE/longchao/Desktop/project/GE_health/SegmentAsYouWish/data/npy/CT_Abd",
+    default= "data/npy/CT_Abd",
     help="Path to the data root directory.",
     # required=True
 )
@@ -42,13 +42,13 @@ parser.add_argument(
     '-medsam_checkpoint',
     type=str,
     help="Path to the MedSAM checkpoint.",
-    default="/home/local/ASURITE/longchao/Desktop/project/GE_health/SegmentAsYouWish/preload/sam_vit_b_01ec64.pth",
+    default="preload/sam_vit_b_01ec64.pth",
     # required=True
 )
 parser.add_argument(
     '-work_dir',
     type=str,
-    default="/home/local/ASURITE/longchao/Desktop/project/GE_health/SegmentAsYouWish/text_prompt/train",
+    default="text_prompt/train",
     help="Path to where the checkpoints and logs are saved."
 )
 parser.add_argument(
@@ -66,7 +66,7 @@ parser.add_argument(
 parser.add_argument(
     '-num_workers',
     type=int,
-    default=2,
+    default=1,
     help="Number of data loader workers."
 )
 parser.add_argument(
@@ -124,7 +124,7 @@ np.random.seed(seed)
 torch.manual_seed(seed)
 torch.cuda.manual_seed(seed)
 
-with open('/home/local/ASURITE/longchao/Desktop/project/GE_health/SegmentAsYouWish/text_prompt/organ_labels.json', 'r') as file:
+with open('text_prompt/organ_labels.json', 'r') as file:
     label_dict = json.load(file)
 
 # Convert keys back to integers since JSON keys are always strings
@@ -290,17 +290,19 @@ class TextPromptEncoder(PromptEncoder):
             return 1
 
 
-# MedSAM model class
-class MedSAM(nn.Module):
+# MedSAMWithCanonicalization model class
+class MedSAMWithCanonicalization(nn.Module):
     def __init__(self, 
-                image_encoder, 
-                mask_decoder,
-                prompt_encoder,
-                # dlc v2: add classes amount
-                num_classes=13,
-                freeze_image_encoder=True,
-                ):
+                 image_encoder, 
+                 mask_decoder,
+                 prompt_encoder,
+                 canonicalization_network,
+                 num_classes=13,
+                 freeze_image_encoder=True):
         super().__init__()
+        # add can network
+        self.canonicalization_network = canonicalization_network
+
         self.image_encoder = image_encoder
         self.mask_decoder = mask_decoder
         self.prompt_encoder = prompt_encoder
@@ -324,8 +326,10 @@ class MedSAM(nn.Module):
 
     def forward(self, image, tokens):
         # do not compute gradients for image encoder
+        canonicalized_image = self.canonicalization_network(image)
+
         with torch.no_grad():
-            image_embedding = self.image_encoder(image) # (B, 256, 64, 64)
+            image_embedding = self.image_encoder(canonicalized_image) # (B, 256, 64, 64)
 
         sparse_embeddings, dense_embeddings = self.prompt_encoder(
             points=None,
@@ -360,7 +364,11 @@ class MedSAM(nn.Module):
         
         return low_res_masks, text_classification_logits
 
+
+
+
 sam_model = sam_model_registry["vit_b"](checkpoint=medsam_checkpoint)
+
 text_prompt_encoder = TextPromptEncoder(
     embed_dim=256,
     image_embedding_size=(64, 64),
@@ -380,12 +388,49 @@ print(f"Text Prompt Encoder size: {sum(p.numel() for p in text_prompt_encoder.pa
 
 # dlc: construct a structure, to align the image_encoder, with text_prompt_encoder
 
-medsam_model = MedSAM(
-    image_encoder = sam_model.image_encoder,
-    mask_decoder = deepcopy(sam_model.mask_decoder),
-    prompt_encoder = text_prompt_encoder,
-    freeze_image_encoder = True
-)
+# medsam_model = MedSAM(
+#     image_encoder = sam_model.image_encoder,
+#     mask_decoder = deepcopy(sam_model.mask_decoder),
+#     prompt_encoder = text_prompt_encoder,
+#     freeze_image_encoder = True
+# )
+
+# design canonicalization hyperparams class
+class CanonicalizationHyperparams:
+    def __init__(self):
+        self.network_type = "escnn" # group equivariant canonicalization
+        self.resize_shape = 28 # resize shape for the canonicalization network
+        self.network_hyperparams = {
+            "kernel_size": 5, # Kernel size for the canonization network
+            "hidden_dim": 32,
+            "out_channels": 32, # Number of output channels for the canonization network
+            "num_layers": 5, # Number of layers in the canonization network
+            "group_type": "roto-reflection",#"roto-reflection", #rotation", # Type of group for the canonization network
+            "group_order": 4, # Number of rotations for the canonization network 
+            # "num_rotations": 4
+        }
+        self.beta = 1.0 
+        self.input_crop_ratio = 1.0
+        self.gradient_trick = "gumbel_softmax" #"straight_through"
+
+# initialize the parameters defined:
+canonicalization_hyperparams = CanonicalizationHyperparams()
+
+# initialize the can network: 
+canonicalization_network = ESCNNEquivariantNetwork(
+    inp_channels=3, 
+    **canonicalization_hyperparams.network_hyperparams
+).to(device)
+
+
+# need to adjsut the freeze option here: # todo
+medsam_model = MedSAMWithCanonicalization(
+    image_encoder=sam_model.image_encoder,
+    mask_decoder=deepcopy(sam_model.mask_decoder),
+    prompt_encoder=text_prompt_encoder,
+    canonicalization_network=canonicalization_network,  # 包含等变网络
+    freeze_image_encoder=True # False
+).to(device)
 
 # parallel training: 
 if torch.cuda.device_count() > 1:
