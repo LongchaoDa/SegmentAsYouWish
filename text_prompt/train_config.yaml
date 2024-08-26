@@ -2,7 +2,7 @@ augmented_textlabel: true
 freeze_image_encoder: true
 canonicalization: true
 classify_head: true
-text_pooling: "mean"
+text_pooling: "mean" # max
 tr_npy_path: "data/npy/CT_Abd"
 medsam_checkpoint: "preload/sam_vit_b_01ec64.pth"
 work_dir: "text_prompt/temp2"
