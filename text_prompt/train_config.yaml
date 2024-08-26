@@ -1,6 +1,6 @@
 augmented_textlabel: true
 freeze_image_encoder: true
-canonical: true
+canonicalization: true
 classify_head: true
 text_pool: "mean"
 tr_npy_path: "data/npy/CT_Abd"

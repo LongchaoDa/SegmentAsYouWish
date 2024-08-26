@@ -45,7 +45,7 @@ def load_config(config_path):
     return config
 
 # Load YAML configuration
-config_path = "/home/local/ASURITE/longchao/Desktop/project/GE_health/SegmentAsYouWish/text_prompt/train_config.yaml"
+config_path = "text_prompt/train_config.yaml"
 yaml_config = load_config(config_path)
 
 # Set up argument parser
