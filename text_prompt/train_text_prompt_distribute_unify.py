@@ -11,6 +11,7 @@ from copy import deepcopy
 from time import time
 import numpy as np
 import torch
+import yaml
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
@@ -38,42 +39,50 @@ Conditions: here
 # augmented_textlabel = False
 
 
+def load_config(config_path):
+    with open(config_path, 'r') as file:
+        config = yaml.safe_load(file)
+    return config
 
+# Load YAML configuration
+config_path = "/home/local/ASURITE/longchao/Desktop/project/GE_health/SegmentAsYouWish/text_prompt/train_config.yaml"
+yaml_config = load_config(config_path)
+
+# Set up argument parser
 parser = argparse.ArgumentParser()
 
 parser.add_argument(
     '-augmented_textlabel',
     type=bool,
-    default= True,
+    default=yaml_config.get('augmented_textlabel', True),
     help="If to augmented textlabel",
 )
-
 
 parser.add_argument(
     '-freeze_image_encoder',
     type=bool,
-    default= True,
+    default=yaml_config.get('freeze_image_encoder', True),
     help="If to freeze image_encoder",
 )
 
 parser.add_argument(
     '-canonical',
     type=bool,
-    default= True,
+    default=yaml_config.get('canonical', True),
     help="If to choose canonicalization",
 )
 
 parser.add_argument(
     '-classify_head',
     type=bool,
-    default= True,
+    default=yaml_config.get('classify_head', True),
     help="If to add classify_head",
 )
 
 parser.add_argument(
     '-text_pool',
     type=str,
-    default= 'mean',
+    default=yaml_config.get('text_pool', 'mean'),
     help="Choose max or mean for text pooling",
 )
 
@@ -81,68 +90,77 @@ parser.add_argument(
     '-i',
     '--tr_npy_path',
     type=str,
-    default= "data/npy/CT_Abd",
+    default=yaml_config.get('tr_npy_path', "data/npy/CT_Abd"),
     help="Path to the data root directory.",
-    # required=True
 )
+
 parser.add_argument(
     '-medsam_checkpoint',
     type=str,
+    default=yaml_config.get('medsam_checkpoint', "preload/sam_vit_b_01ec64.pth"),
     help="Path to the MedSAM checkpoint.",
-    default="preload/sam_vit_b_01ec64.pth",
-    # required=True
 )
+
 parser.add_argument(
     '-work_dir',
     type=str,
-    default="text_prompt/temp",
+    default=yaml_config.get('work_dir', "text_prompt/temp"),
     help="Path to where the checkpoints and logs are saved."
 )
+
 parser.add_argument(
     '-max_epochs',
     type=int,
-    default=1000,
+    default=yaml_config.get('max_epochs', 1000),
     help="Maximum number of epochs."
 )
+
 parser.add_argument(
     '-batch_size',
     type=int,
-    default=2,
+    default=yaml_config.get('batch_size', 2),
     help="Batch size."
 )
+
 parser.add_argument(
     '-num_workers',
     type=int,
-    default=1,
+    default=yaml_config.get('num_workers', 1),
     help="Number of data loader workers."
 )
+
 parser.add_argument(
     '-resume',
     type=str,
-    default=None,
+    default=yaml_config.get('resume', None),
     help="Path to the checkpoint to resume from."
 )
+
 parser.add_argument(
     '-lr',
     type=float,
-    default=0.00005,
+    default=yaml_config.get('lr', 0.00005),
     help="learning rate (absolute lr)"
 )
+
 parser.add_argument(
     '-weight_decay',
     type=float,
-    default=0.01,
+    default=yaml_config.get('weight_decay', 0.01),
     help="Weight decay."
 )
+
 parser.add_argument(
     '-seed',
     type=int,
-    default=2023,
+    default=yaml_config.get('seed', 2023),
     help="Random seed for reproducibility."
 )
+
 parser.add_argument(
     '--disable_aug',
     action='store_true',
+    default=yaml_config.get('disable_aug', False),
     help="Disable data augmentation."
 )
 
@@ -156,6 +174,12 @@ num_workers = args.num_workers
 medsam_checkpoint = args.medsam_checkpoint
 data_aug = not args.disable_aug
 seed = args.seed
+augmented_textlabel = args.augmented_textlabel
+canonicalization = args.canonicalization
+freeze_image_encoder = args.freeze_image_encoder
+classify_head = args.classify_head
+text_pooling = args.text_pooling
+
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
