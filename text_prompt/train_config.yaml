@@ -1,0 +1,16 @@
+augmented_textlabel: true
+freeze_image_encoder: true
+canonical: true
+classify_head: true
+text_pool: "mean"
+tr_npy_path: "data/npy/CT_Abd"
+medsam_checkpoint: "preload/sam_vit_b_01ec64.pth"
+work_dir: "text_prompt/temp2"
+max_epochs: 1000
+batch_size: 2
+num_workers: 1
+resume: null
+lr: 0.00005
+weight_decay: 0.01
+seed: 2023
+disable_aug: false
