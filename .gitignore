@@ -19,6 +19,7 @@ work_dir/
 /text_prompt/train_text_prompt
 /text_prompt/train_text_prompt_max_200
 /text_prompt/train_text_prompt_v1
+/text_prompt/train
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

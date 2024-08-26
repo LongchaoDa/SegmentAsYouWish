@@ -1,6 +1,6 @@
 import os
 import sys
-# sys.path.append("/home/local/ASURITE/longchao/Desktop/project/GE_health/SegmentAsYouWish")
+sys.path.append("/home/local/ASURITE/longchao/Desktop/project/GE_health/SegmentAsYouWish")
 import glob
 import random
 import monai
@@ -565,6 +565,9 @@ else:
 
 losses = []
 epoch_time = []
+
+freq = 1
+
 for epoch in range(start_epoch, num_epochs):
     epoch_loss = [1e10 for _ in range(len(train_loader))]
     epoch_start_time = time()
@@ -620,7 +623,8 @@ for epoch in range(start_epoch, num_epochs):
         checkpoint["best_loss"] = best_loss
         torch.save(checkpoint, join(work_dir, "medsam_text_prompt_best.pth"))
 
-    torch.save(checkpoint, join(work_dir, "medsam_text_prompt_latest.pth"))
+    if epoch % freq == 0 and epoch > 0:
+        torch.save(checkpoint, join(work_dir, "medsam_text_prompt_latest.pth"))
 
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 10))
     ax1.plot(losses)
@@ -638,3 +642,5 @@ for epoch in range(start_epoch, num_epochs):
     epoch_loss_reduced = 1e10
 
 writer.close()
+
+# [1] 1592805
