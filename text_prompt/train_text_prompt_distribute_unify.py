@@ -66,9 +66,9 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    '-canonical',
+    '-canonicalization',
     type=bool,
-    default=yaml_config.get('canonical', True),
+    default=yaml_config.get('canonicalization', True),
     help="If to choose canonicalization",
 )
 
@@ -80,9 +80,9 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    '-text_pool',
+    '-text_pooling',
     type=str,
-    default=yaml_config.get('text_pool', 'mean'),
+    default=yaml_config.get('text_pooling', 'mean'),
     help="Choose max or mean for text pooling",
 )
 
