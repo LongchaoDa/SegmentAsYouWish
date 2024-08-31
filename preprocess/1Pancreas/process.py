@@ -123,9 +123,26 @@ def process_all_images_and_labels(root_folder, label_path, work_dir):
 
                         print(f"Processed and saved {dicom_folder_path} with {label_nii_path}")
 
+
+def simplify_directory_structure(root_path):
+    for root, dirs, files in os.walk(root_path, topdown=False):
+        # If a directory contains only one subdirectory and no files, move its content up
+        if len(dirs) == 1 and not files:
+            child_dir = dirs[0]
+            child_path = os.path.join(root, child_dir)
+            for item in os.listdir(child_path):
+                shutil.move(os.path.join(child_path, item), root)
+            os.rmdir(child_path)
+
+    for root, dirs, files in os.walk(root_path, topdown=False):
+        if len(dirs) == 1 and not files:
+            simplify_directory_structure(root)
+
+simplify_directory_structure('data/1Pancreas/download/Pancreas-CT-20200910/Pancreas-CT')
+
 # Usage
-root_folder = "/home/local/ASURITE/longchao/Desktop/project/GE_health/SegmentAsYouWish/data/1Pancreas/download/Pancreas-CT-20200910/Pancreas-CT"
-label_path = "/home/local/ASURITE/longchao/Desktop/project/GE_health/SegmentAsYouWish/data/1Pancreas/download/TCIA_pancreas_labels-02-05-2017"
-work_dir = "/home/local/ASURITE/longchao/Desktop/project/GE_health/SegmentAsYouWish/data/1Pancreas/npy/"
+root_folder = "data/1Pancreas/download/Pancreas-CT-20200910/Pancreas-CT"
+label_path = "data/1Pancreas/download/TCIA_pancreas_labels-02-05-2017"
+work_dir = "data/1Pancreas/npy2/"
 
 process_all_images_and_labels(root_folder, label_path, work_dir)
