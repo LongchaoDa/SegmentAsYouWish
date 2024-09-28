@@ -142,7 +142,7 @@ canonicalization_network = DiscreteGroupImageCanonicalization(canonicalization_d
 
 ###### Initialize the Main Model ###### 
 # need to adjsut the freeze option here: # todo
-medsam_model = MedSAMWithCanonicalization(
+flan_model = MedSAMWithCanonicalization(
     image_encoder=sam_model.image_encoder,
     mask_decoder=deepcopy(sam_model.mask_decoder),
     prompt_encoder=text_prompt_encoder,
@@ -152,12 +152,12 @@ medsam_model = MedSAMWithCanonicalization(
     freeze_image_encoder=freeze_image_encoder # False
 ).to(device)
 
-checkpoint = torch.load(checkpoint_name)
-medsam_model.load_state_dict(checkpoint["model"], strict = False)
+checkpoint = torch.load("results/foundation_model/" + checkpoint_name)
+flan_model.load_state_dict(checkpoint["model"], strict = False)
 
 ###### Data Parallel training ######
 # Wrap the model with DistributedDataParallel
-medsam_model = medsam_model.to(device)
+flan_model = flan_model.to(device)
 loss_funs = {
     "seg_loss": monai.losses.DiceLoss(sigmoid=True, squared_pred=True, reduction='mean'),
     "ce_loss" : nn.BCEWithLogitsLoss(reduction="mean"),
@@ -233,7 +233,7 @@ def test_epoch_batch_informed(eval_loader, model, loss_funs, loss_coefs, epoch =
     return np.mean(eval_losses), np.mean(seg_losses), np.mean(ce_losses), np.mean(clf_losses), np.mean(dice_coeffs), np.concatenate(preds, axis = 0), np.concatenate(trues, axis = 0)
 
 
-#### Evaluation ####
+# #### Evaluation ####
 print("FLanS: Anatomy-Informed Segmentation Results (Free-Form Text)")
 texts_results = []
 aug_text_results = []
@@ -243,8 +243,8 @@ with torch.no_grad():
         test_loader = DataLoader(test_dataset, batch_size = 1, shuffle=False, num_workers=num_workers, pin_memory=True)
         aug_test_dataset = FLanSDataset(data_path_lists = {key: test_data_path_lists[key]}, label_dict = label_dict, data_aug = True, group_order = config_yaml["canonicalization"]["group_order"])
         aug_test_loader = DataLoader(aug_test_dataset, batch_size = 1, shuffle=False, num_workers=num_workers, pin_memory=True)
-        _, _, test_ce_loss_text, _, test_dice_score_text, test_preds_text, test_trues_text = test_epoch_batch_informed(test_loader, medsam_model, loss_funs, loss_coefs, prompt_type = "text")
-        _, _, aug_test_ce_loss_text, _, aug_test_dice_score_text, aug_test_preds_text, aug_test_trues_text = test_epoch_batch_informed(aug_test_loader, medsam_model, loss_funs, loss_coefs, prompt_type = "text")
+        _, _, test_ce_loss_text, _, test_dice_score_text, test_preds_text, test_trues_text = test_epoch_batch_informed(test_loader, flan_model, loss_funs, loss_coefs, prompt_type = "text")
+        _, _, aug_test_ce_loss_text, _, aug_test_dice_score_text, aug_test_preds_text, aug_test_trues_text = test_epoch_batch_informed(aug_test_loader, flan_model, loss_funs, loss_coefs, prompt_type = "text")
         nsd_text = normalized_surface_distance_np(test_preds_text, test_trues_text)
         aug_nsd_text = normalized_surface_distance_np(aug_test_preds_text, aug_test_trues_text)
         print(checkpoint_name)
@@ -271,8 +271,8 @@ with torch.no_grad():
         test_loader = DataLoader(test_dataset, batch_size = 1, shuffle=False, num_workers=num_workers, pin_memory=True)
         aug_test_dataset = FLanSDataset(data_path_lists = {key: test_data_path_lists[key]}, label_dict = label_dict, data_aug = True, group_order = config_yaml["canonicalization"]["group_order"])
         aug_test_loader = DataLoader(aug_test_dataset, batch_size = 1, shuffle=False, num_workers=num_workers, pin_memory=True)
-        _, _, test_ce_loss_organ, _, test_dice_score_organ, test_preds_organ, test_trues_organ = test_epoch_batch_informed(test_loader, medsam_model, loss_funs, loss_coefs, prompt_type = "organ")
-        _, _, aug_test_ce_loss_organ, _, aug_test_dice_score_organ, aug_test_preds_organ, aug_test_trues_organ = test_epoch_batch_informed(aug_test_loader, medsam_model, loss_funs, loss_coefs, prompt_type = "organ")
+        _, _, test_ce_loss_organ, _, test_dice_score_organ, test_preds_organ, test_trues_organ = test_epoch_batch_informed(test_loader, flan_model, loss_funs, loss_coefs, prompt_type = "organ")
+        _, _, aug_test_ce_loss_organ, _, aug_test_dice_score_organ, aug_test_preds_organ, aug_test_trues_organ = test_epoch_batch_informed(aug_test_loader, flan_model, loss_funs, loss_coefs, prompt_type = "organ")
         nsd_organ = normalized_surface_distance_np(test_preds_organ, test_trues_organ)
         aug_nsd_organ = normalized_surface_distance_np(aug_test_preds_organ, aug_test_trues_organ)
         print(checkpoint_name)
@@ -290,16 +290,18 @@ torch.save({"text": texts_results,
             "eval_scores_" + checkpoint_name[:-4] + ".pt")
 
 agnostic_results = []
+## please turn off canonicalization when evaluating on anatomy-agnostic prompts as we only have gts for the original images.
+flan_model.use_canonicalization = False
 print("FLanS: Anatomy-Agnostic Segmentation Results") 
 with torch.no_grad(): 
     for key in list(test_data_path_lists.keys()):
-        test_dataset = FLanSDataset_pos_only(data_path_lists = test_data_path_lists,
-                                      label_dict = label_dict, 
-                                      pos_file_dict = pos_file_dict, 
-                                      pos_prompt_dict = pos_prompt_dict,
-                                      pos_box_dict = pos_box_dict)
-        test_loader = DataLoader(test_dataset, batch_size=8, shuffle=True, num_workers=8)
-        _, test_seg_loss_agnostic, test_ce_loss_agnostic, _, test_dice_score_agnostic, test_preds_agnostic, test_trues_agnostic = test_epoch_batch(test_loader, medsam_model, loss_funs, loss_coefs)
+        test_dataset = FLanSDataset_pos_only(data_path_lists = {key: test_data_path_lists[key]},
+                                                                  label_dict = label_dict, 
+                                                                  pos_file_dict = pos_file_dict, 
+                                                                  pos_prompt_dict = pos_prompt_dict,
+                                                                  pos_box_dict = pos_box_dict)
+        test_loader = DataLoader(test_dataset, batch_size=8, shuffle=False, num_workers=8)
+        _, test_seg_loss_agnostic, test_ce_loss_agnostic, _, test_dice_score_agnostic, test_preds_agnostic, test_trues_agnostic = test_epoch_batch(test_loader, flan_model, loss_funs, loss_coefs)
         nsd_agnostic = normalized_surface_distance_np(test_preds_agnostic, test_trues_agnostic)
         print(checkpoint_name)
         print(key)
@@ -312,5 +314,5 @@ torch.save({"text": texts_results,
             "organ": organ_results,
             "aug_organ": aug_organ_results,
             "agnostic": agnostic_results},
-            "1eval_scores_" + checkpoint_name[:-4] + ".pt")
+            "eval_scores_" + checkpoint_name[:-4] + ".pt")
 
