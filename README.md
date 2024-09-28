@@ -1,4 +1,4 @@
-# **Paper Title**: Segment as You Wish: Free-Form Language-Based Segmentation for Medical Images
+#Segment as You Wish: Free-Form Language-Based Segmentation for Medical Images
 
 ## **Abstract**
 Medical imaging is crucial for diagnosing a patient’s health condition, and accurate segmentation of these images is essential for isolating regions of interest to ensure precise diagnosis and treatment planning. Existing methods primarily rely on bounding boxes or point-based prompts, while few have explored text-related prompts, despite clinicians often describing their observations and instructions in natural language. To address this gap, we introduce FLanS, a novel medical image segmentation model that handles all types of free-form text prompts, including both professional anatomy-informed prompts and anatomy-agnostic positional or size descriptions. Our model also incorporates equivariance to ensure consistent, accurate segmentations across varying scan orientations and reduce confusion between the anatomical position of an organ and its appearance in the scan. We propose a RAG-based free-form text prompt generator, along which we train \ours{} on over 100k medical images from 7 public datasets. Comprehensive experiments demonstrate the model’s superior language understanding and segmentation precision, along with a deep comprehension of the relationship between them, outperforming SOTA baselines on both in-domain and out-of-domain datasets.
@@ -45,7 +45,7 @@ A breakdown of the key files and directories in this repository:
 ## **Installation**
 
 ```bash
-    pip install -r requirements.txt
+pip install -r requirements.txt
 ```
 
 ---
