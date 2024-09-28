@@ -1,0 +1,1 @@
+torchrun --nproc_per_node=8 main_train_canonicalizer.py --config configs/train_config_main1.yaml
