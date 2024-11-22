@@ -4,12 +4,17 @@
 Medical imaging is crucial for diagnosing a patient’s health condition, and accurate segmentation of these images is essential for isolating regions of interest to ensure precise diagnosis and treatment planning. Existing methods primarily rely on bounding boxes or point-based prompts, while few have explored text-related prompts, despite clinicians often describing their observations and instructions in natural language. To address this gap, we first propose a RAG-based free-form text prompt generator, that leverages the domain corpus to generate diverse and realistic descriptions. Then, we introduce FreeSeg, a novel medical image segmentation model that handles various free-form text prompts, including anatomy-informed queries and anatomy-agnostic queries. Additionally, our model also incorporates a symmetry-aware canonicalization module to ensure consistent, accurate segmentations across varying scan orientations and reduce confusion between the anatomical position of an organ and its appearance in the scan. FreeSeg is trained on a large-scale dataset of over 100k medical images and comprehensive experiments demonstrate the model’s superior language understanding and segmentation precision, outperforming SOTA baselines on both in-domain and out-of-domain datasets.
 
 ---
+* The model is taken as `FreeSeg` or also called FLanS in short for Free-form language segmentation, we will use interchangeably.
+
+
+## **Examples for Segmentations Deployment**
+Please find more recordings on the use cases in folder `./assets/`.
 
 ## **Repository Structure**
 A breakdown of the key files and directories in this repository:
 
 - **`configs/`**: Configuration files for training and evaluation.
-  - `train_config_main1.yaml`: Main configuration file for FLanS training.
+  - `train_config_main1.yaml`: Main configuration file for our model training.
   - `train_data_paths.json`: Paths to all training datasets.
   - `data_paths_can.json`: Paths to all datasets for training the canonicalizer.
   - `train_pos_data_paths.json`: Paths to datasets with anatomy-agnostic prompts.
@@ -20,7 +25,7 @@ A breakdown of the key files and directories in this repository:
 
 - **`modules/`**: Model definitions and architecture.
   - `canonicalization_sam/`: Canonicalization module and equivariant networks.
-  - `model.py`: Main FLanS module.
+  - `model.py`: Main model module.
   - `segment_anything/`: SAM modules.
 
 - **`utils/`**: Utility scripts for various tasks.
@@ -64,7 +69,7 @@ sh run_canonicalizer.sh
 
 **Step 2 and 3: Train the Canonicalizer**
 
-To train the FLanS together with Canonicalizer, run the following command:
+To train the our model together with Canonicalizer, run the following command:
 ```bash
 python main_train_three_stage_ddp.py --config configs/train_config_main.yaml
 ```
@@ -74,7 +79,7 @@ sh run_main.sh
 ```
 
 ## **Evaluation**
-To evaluate FLanS on all three test sets (FLARE22, WORD, and RAOS), with both anatomy-informed and anatomy-agnostic prompts, run:
+To evaluate our model on all three test sets (FLARE22, WORD, and RAOS), with both anatomy-informed and anatomy-agnostic prompts, run:
 ```bash
 python evals/eval_flans.py
 ```
@@ -83,3 +88,6 @@ python evals/eval_flans.py
 
 ## **Checkpoint**
 Download pretrained model's weights [here](https://drive.google.com/file/d/1mU_QJYkGYOtXCPDX6iCSQjQvOucmZJF9/view?usp=sharing).
+
+
+
