@@ -1,0 +1,45 @@
+data:
+    work_dir: "results/foundation_model2/"
+    inp_channels: 3
+    image_size: 1024
+    prompt_path: 'prompts/free_form_text_prompts.json'
+    data_path: 'configs/train_data_paths.json'
+hyperparameter:
+    max_epochs: 100
+    stage_one_epochs: 40
+    batch_size: 2
+    num_workers: 8
+    learning_rate:
+        prompt_encoder_lr: 0.0001
+        image_encoder_lr: 0.0001
+        mask_decoder_lr: 0.0001
+        text_classification_head_lr: 0.0001
+        canonicalization_network_lr: 0.0001
+    seed: 0
+    text_pooling: "mean" # max
+    decay_rate: 0.9
+    coef_seg: 10.0
+    coef_ce: 1.0 
+    coef_clf: 1.0
+    patience: 5
+train:
+    data_aug: True
+    use_canonicalization: True
+    freeze_image_encoder: False
+    classify_head: False
+    textlabel_aug: True
+model:
+    resume: True
+    medsam_checkpoint: "preload/sam_vit_b_01ec64.pth"
+    text_embed_dim: 256
+canonicalization:
+    resize_shape: 1024
+    kernel_size: 9
+    hidden_dim: 8
+    out_channels: 8
+    num_layers: 3
+    group_type: "roto-reflection" #"roto-reflection" #
+    group_order: 8
+    beta: 1.0
+    input_crop_ratio: 1.0
+    gradient_trick: "straight_through" 

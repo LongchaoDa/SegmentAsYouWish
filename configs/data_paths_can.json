@@ -1,0 +1,1 @@
+{"Abdomen_1K_Subtask1": "data/touse/AbdomenCT_1K/npy/CT_Abd1K/Subtask1", "MSD_Lung": "data/touse/MSD/npy/CT_MSD/Task06_Lung", "MSD_Spleen": "data/touse/MSD/npy/CT_MSD/Task09_Spleen", "FLARE22_train": "data/touse/FLARE22/npy/CT_Abd_train", "FLARE22_valid": "data/touse/FLARE22/npy/CT_Abd_valid", "BTCV": "data/touse/BTCV/npy/CT_BTCV/Abdomen"}
