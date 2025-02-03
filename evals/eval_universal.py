@@ -1,16 +1,9 @@
 import json
-import torch
-from scipy.ndimage import convolve, distance_transform_edt, sobel
+from scipy.ndimage import distance_transform_edt, sobel
 import nibabel as nib
 import numpy as np
-from scipy.spatial.distance import directed_hausdorff
-import matplotlib.pyplot as plt
-import nibabel as nib
-import matplotlib.pyplot as plt
-from ipywidgets import interact
 import numpy as np
 import os
-import re
 
 with open("prompts/free_form_text_prompts.json", 'r') as file:
     free_form_text_prompts = json.load(file)

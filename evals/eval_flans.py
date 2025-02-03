@@ -1,48 +1,40 @@
 import os
 import sys
 import argparse
-# Parser setup
-parser = argparse.ArgumentParser(description='Evaluate the model with specified checkpoint and GPU')
-parser.add_argument('--checkpoint', type=str, required=True, help='Path to the checkpoint file')
-parser.add_argument('--gpu', type=str, default='0', help='Specify GPU device')
-args = parser.parse_args()
-
-os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
-checkpoint_name = args.checkpoint
-current_dir = os.getcwd()
-# Move one level up to the parent directory
-parent_dir = os.path.dirname(current_dir)
-# Change the working directory to the parent directory
-os.chdir(parent_dir)
-sys.path.append(parent_dir)
+import json
 import random
-import monai
-from os import makedirs
-from os.path import join, basename
-from tqdm import tqdm
-from copy import deepcopy
-from time import time
 import numpy as np
 import torch
 import yaml
+import monai
 import torch.nn as nn
-import torch.optim as optim
+import torch.nn.functional as F
 from datetime import datetime
-from torch.utils.data import Dataset, DataLoader
-from matplotlib import pyplot as plt
-from transformers import CLIPTokenizer, CLIPTextModel
-import argparse
-from torch.nn.parallel import DataParallel
-import json
-from modules import DiscreteGroupImageCanonicalization, ESCNNEquivariantNetwork
-from modules import TextPromptEncoder, MedSAMWithCanonicalization
-from modules import sam_model_registry
-from utils import FLanSDataset, normalized_surface_distance_np, FLanSDataset_pos_only, test_epoch_batch
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-import warnings
-warnings.filterwarnings("ignore")
+from tqdm import tqdm
+from torch.utils.data import DataLoader
+from modules import (
+    DiscreteGroupImageCanonicalization,
+    ESCNNEquivariantNetwork,
+    TextPromptEncoder,
+    MedSAMWithCanonicalization,
+    sam_model_registry
+)
+from utils import (
+    FLanSDataset,
+    normalized_surface_distance_np,
+    FLanSDataset_pos_only,
+    test_epoch_batch
+)
 
+# Argument Parser
+parser = argparse.ArgumentParser(description="Evaluate the model with specified checkpoint and GPU")
+parser.add_argument('--checkpoint', type=str, required=True, help="Path to the checkpoint file")
+parser.add_argument('--gpu', type=str, default='0', help="Specify GPU device")
+args = parser.parse_args()
 
+# Set environment variables
+os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
+checkpoint_name = args.checkpoint
 
 
 def load_config(config_path):
@@ -51,7 +43,7 @@ def load_config(config_path):
     return config
 
 config_yaml = load_config("configs/train_config_main1.yaml")
-# checkpoint_name = "cosine_two_stage_canonTrue_augTrue_classify_headFalse_freezeimagencoderFalse_lr_prompt0.0001_lr_imgenc0.0001_lr_imgdec0.0001_lr_can0.0001_lr_class0.0001_bz2_poolingmean_gradstraight_through_canparams9_8_3_8.pth"
+checkpoint_name = "cosine_two_stage_canonTrue_augTrue_classify_headFalse_freezeimagencoderFalse_lr_prompt0.0001_lr_imgenc0.0001_lr_imgdec0.0001_lr_can0.0001_lr_class0.0001_bz2_poolingmean_gradstraight_through_canparams9_8_3_8.pth"
 
 work_dir = config_yaml["data"]["work_dir"]
 num_epochs = config_yaml["hyperparameter"]["max_epochs"]
@@ -289,9 +281,12 @@ torch.save({"text": texts_results,
             "aug_organ": aug_organ_results},
             "eval_scores_" + checkpoint_name[:-4] + ".pt")
 
+
 agnostic_results = []
-## please turn off canonicalization when evaluating on anatomy-agnostic prompts as we only have gts for the original images.
+###############
+# please turn off canonicalization when evaluating on anatomy-agnostic prompts as we only have gts for the original images.
 flan_model.use_canonicalization = False
+####################
 print("FLanS: Anatomy-Agnostic Segmentation Results") 
 with torch.no_grad(): 
     for key in list(test_data_path_lists.keys()):
