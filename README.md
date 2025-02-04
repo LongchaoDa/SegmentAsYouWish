@@ -50,7 +50,7 @@ A breakdown of the key files and directories in this repository:
 ## **Installation**
 
 ```bash
-pip install -r requirements.txt
+pip install -e .
 ```
 
 ---
