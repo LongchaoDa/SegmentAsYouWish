@@ -87,7 +87,8 @@ python evals/eval_flans.py
 `evals` folder also contains evaluation scripts for all the baseline models
 
 ## **Checkpoint**
-Download pretrained model's weights [here](https://drive.google.com/file/d/1mU_QJYkGYOtXCPDX6iCSQjQvOucmZJF9/view?usp=sharing).
+Download pretrained model's weights [here](https://drive.google.com/file/d/1X5Ca3PIkmsN1HexRo4z8v8OSneWWQzJg/view?usp=sharing).
+
 
 
 
